@@ -15,7 +15,7 @@ jobs:
 
       # ---------- Lean 4 proofs -------------------------------------------
       - name: Set up elan + Lake
-        uses: leanprover/elan-action@v1
+        uses: leanprover/elan-action@v0.4.1
 
       - name: Build Lean proofs
         run: |
