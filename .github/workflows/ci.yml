@@ -14,8 +14,10 @@ jobs:
         uses: actions/checkout@v4
 
       # ---------- Lean 4 proofs -------------------------------------------
-      - name: Set up elan + Lake
-        uses: leanprover/elan-action@v0.4.1
+      - name: Install elan
+        run: |
+          curl -sSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y
+          echo "$HOME/.elan/bin" >> $GITHUB_PATH
 
       - name: Build Lean proofs
         run: |
