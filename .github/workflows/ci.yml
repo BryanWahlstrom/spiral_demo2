@@ -1,0 +1,60 @@
+# CI – SpiralCollapse v2.3  (Lean 4 ▸ Py ▸ RTL ▸ Formal)
+name: spiralcollapse-ci
+
+on:
+  push:
+    branches: [ main, dev, feat/** ]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ---------- Lean 4 proofs -------------------------------------------
+      - name: Set up elan + Lake
+        uses: leanprover/elan-action@v1
+
+      - name: Build Lean proofs
+        run: |
+          lake build                     # compiles *.lean
+      - name: Generate Lean docs (HTML)
+        run: |
+          lake exe docs
+        if: github.event_name == 'push'
+
+      # ---------- Python tests --------------------------------------------
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install spiralcanon (dev extras)
+        run: |
+          pip install -e .[dev]          # pulls numpy, pytest, etc.
+
+      - name: Run pytest
+        run: |
+          pytest -q tests                # ~85 ms
+
+      # ---------- Formal RTL checks ---------------------------------------
+      - name: Install Yosys + SymbiYosys
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yosys symbiyosys
+
+      - name: Prove RTL ↔ golden equivalence
+        run: |
+          sby -f hdl/formal/prove_gate_equiv.sby
+
+      # ---------- CI badge publish (shields.io) ---------------------------
+      - name: Create workflow summary badge
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "![CI](https://img.shields.io/github/actions/workflow/status/${{ github.repository }}/ci.yml?branch=main)" > BADGE.md
+      - name: Commit badge
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          file_pattern: BADGE.md
